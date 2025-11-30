@@ -1,55 +1,136 @@
-countries:
-  - DZA  # Algeria
-  - AGO  # Angola
-  - BEN  # Benin
-  - BWA  # Botswana
+# African Countries Configuration
+# ISO3 codes for African countries to analyze
+
+# Major resource-rich African economies
+major_economies:
+  - NGA  # Nigeria (oil)
+  - ZAF  # South Africa (minerals, metals)
+  - EGY  # Egypt (oil, gas)
+  - DZA  # Algeria (oil, gas)
+  - AGO  # Angola (oil, diamonds)
+  - LBY  # Libya (oil)
+
+# Mineral-dependent economies
+mineral_dependent:
+  - ZMB  # Zambia (copper)
+  - COD  # DR Congo (cobalt, copper, diamonds)
+  - BWA  # Botswana (diamonds)
+  - NAM  # Namibia (uranium, diamonds)
+  - ZWE  # Zimbabwe (platinum, gold)
+  - GHA  # Ghana (gold, cocoa)
+
+# Agricultural commodity exporters
+agricultural:
+  - CIV  # Côte d'Ivoire (cocoa, coffee)
+  - KEN  # Kenya (tea, coffee, flowers)
+  - ETH  # Ethiopia (coffee)
+  - UGA  # Uganda (coffee)
+  - TZA  # Tanzania (coffee, cotton, cashew)
+  - MLI  # Mali (cotton, gold)
+
+# Diversified economies (comparison group)
+diversified:
+  - MAR  # Morocco
+  - TUN  # Tunisia
+  - MUS  # Mauritius
+  - SEN  # Senegal
+  - RWA  # Rwanda
   - BFA  # Burkina Faso
-  - BDI  # Burundi
-  - CMR  # Cameroon
-  - CPV  # Cabo Verde
-  - CAF  # Central African Republic
-  - TCD  # Chad
-  - COM  # Comoros
-  - COG  # Congo
-  - COD  # Democratic Republic of the Congo
-  - CIV  # Côte d'Ivoire
-  - DJI  # Djibouti
-  - EGY  # Egypt
+
+# Oil exporters
+oil_exporters:
+  - NGA  # Nigeria
+  - AGO  # Angola
+  - DZA  # Algeria
+  - LBY  # Libya
   - GNQ  # Equatorial Guinea
-  - ERI  # Eritrea
-  - SWZ  # Eswatini
-  - ETH  # Ethiopia
   - GAB  # Gabon
+  - TCD  # Chad
+  - COG  # Congo Republic
+
+# All countries combined (for main analysis)
+all_countries:
+  # North Africa
+  - DZA  # Algeria
+  - EGY  # Egypt
+  - LBY  # Libya
+  - MAR  # Morocco
+  - TUN  # Tunisia
+  
+  # West Africa
+  - BEN  # Benin
+  - BFA  # Burkina Faso
+  - CPV  # Cape Verde
+  - CIV  # Côte d'Ivoire
   - GMB  # Gambia
   - GHA  # Ghana
   - GIN  # Guinea
   - GNB  # Guinea-Bissau
-  - KEN  # Kenya
-  - LSO  # Lesotho
   - LBR  # Liberia
-  - LBY  # Libya
-  - MDG  # Madagascar
-  - MWI  # Malawi
   - MLI  # Mali
   - MRT  # Mauritania
-  - MUS  # Mauritius
-  - MAR  # Morocco
-  - MOZ  # Mozambique
-  - NAM  # Namibia
   - NER  # Niger
   - NGA  # Nigeria
-  - RWA  # Rwanda
-  - STP  # Sao Tome and Principe
   - SEN  # Senegal
-  - SYC  # Seychelles
   - SLE  # Sierra Leone
-  - SOM  # Somalia
-  - ZAF  # South Africa
-  - SSD  # South Sudan
-  - SDN  # Sudan
-  - TZA  # Tanzania
   - TGO  # Togo
-  - TUN  # Tunisia
+  
+  # Central Africa
+  - AGO  # Angola
+  - CMR  # Cameroon
+  - CAF  # Central African Republic
+  - TCD  # Chad
+  - COG  # Congo Republic
+  - COD  # DR Congo
+  - GNQ  # Equatorial Guinea
+  - GAB  # Gabon
+  
+  # East Africa
+  - BDI  # Burundi
+  - COM  # Comoros
+  - DJI  # Djibouti
+  - ERI  # Eritrea
+  - ETH  # Ethiopia
+  - KEN  # Kenya
+  - MDG  # Madagascar
+  - MWI  # Malawi
+  - MUS  # Mauritius
+  - MOZ  # Mozambique
+  - RWA  # Rwanda
+  - SYC  # Seychelles
+  - SOM  # Somalia
+  - SSD  # South Sudan
+  - TZA  # Tanzania
   - UGA  # Uganda
+  
+  # Southern Africa
+  - BWA  # Botswana
+  - LSO  # Lesotho
+  - NAM  # Namibia
+  - ZAF  # South Africa
+  - SWZ  # Eswatini (Swaziland)
   - ZMB  # Zambia
   - ZWE  # Zimbabwe
+
+# Countries with good data quality (subset for initial analysis)
+high_quality_data:
+  - DZA  # Algeria
+  - EGY  # Egypt
+  - ZAF  # South Africa
+  - NGA  # Nigeria
+  - KEN  # Kenya
+  - GHA  # Ghana
+  - MAR  # Morocco
+  - TUN  # Tunisia
+  - ETH  # Ethiopia
+  - TZA  # Tanzania
+  - UGA  # Uganda
+  - RWA  # Rwanda
+  - SEN  # Senegal
+  - CIV  # Côte d'Ivoire
+  - CMR  # Cameroon
+  - AGO  # Angola
+  - ZMB  # Zambia
+  - BWA  # Botswana
+  - NAM  # Namibia
+  - MOZ  # Mozambique
