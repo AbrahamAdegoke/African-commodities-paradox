@@ -4,13 +4,17 @@ World Bank Data Collector Module
 This module fetches economic indicators from the World Bank WDI API
 for African countries to analyze the commodities paradox.
 
+Provides two main functions:
+- fetch_wdi_data: High-level function with predefined indicators for the project
+- fetch_wdi: Lower-level function for custom indicator fetching
+
 Author: Abraham Adegoke
 Date: November 2025
 """
 
 import pandas as pd
 import requests
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import time
 import logging
 from pathlib import Path
@@ -26,6 +30,14 @@ class WorldBankAPI:
     
     Base URL: https://api.worldbank.org/v2/
     Documentation: https://datahelpdesk.worldbank.org/knowledgebase/articles/889392
+    
+    Attributes:
+        per_page (int): Number of records per API request (max 1000)
+        session (requests.Session): Reusable HTTP session
+        
+    Example:
+        >>> api = WorldBankAPI()
+        >>> df = api.fetch_indicator(['NGA', 'ZAF'], 'NY.GDP.MKTP.KD.ZG', 2010, 2020)
     """
     
     BASE_URL = "https://api.worldbank.org/v2"
@@ -92,7 +104,7 @@ class WorldBankAPI:
                 time.sleep(0.1)
                 
             except requests.exceptions.RequestException as e:
-                logger.error(f"Error fetching {indicator} for {country}: {e}")
+                logger.warning(f"Error fetching {indicator} for {country}: {e}")
                 continue
         
         df = pd.DataFrame(all_data)
@@ -151,6 +163,43 @@ class WorldBankAPI:
         return merged_df
 
 
+def fetch_wdi(
+    countries: List[str],
+    indicators: Dict[str, str],
+    start_year: int = 2000,
+    end_year: int = 2023
+) -> pd.DataFrame:
+    """
+    Fetch custom World Bank indicators.
+    
+    This is a lower-level function that allows fetching any set of indicators.
+    For the standard project indicators, use fetch_wdi_data() instead.
+    
+    Args:
+        countries: List of ISO3 country codes
+        indicators: Dict mapping WB indicator codes to column names
+        start_year: Start year (default: 2000)
+        end_year: End year (default: 2023)
+        
+    Returns:
+        DataFrame with country, year, and indicator columns
+        
+    Example:
+        >>> indicators = {
+        ...     'NY.GDP.MKTP.KD.ZG': 'gdp_growth',
+        ...     'FP.CPI.TOTL.ZG': 'inflation'
+        ... }
+        >>> df = fetch_wdi(['NGA', 'ZAF'], indicators, 2010, 2020)
+    """
+    api = WorldBankAPI()
+    return api.fetch_multiple_indicators(
+        countries=countries,
+        indicators=indicators,
+        start_year=start_year,
+        end_year=end_year
+    )
+
+
 def fetch_wdi_data(
     countries: List[str],
     start_year: int = 1990,
@@ -160,14 +209,18 @@ def fetch_wdi_data(
     """
     Main function to fetch all WDI indicators needed for the project.
     
+    This is the high-level function that fetches all indicators required
+    for the African Commodities Paradox analysis.
+    
     Indicators fetched:
-    - GDP growth (annual %)
-    - Inflation, consumer prices (annual %)
-    - Trade openness ((Exports + Imports) / GDP)
-    - Gross capital formation (% of GDP) - proxy for investment
-    - Fuel exports (% of merchandise exports)
-    - Ores and metals exports (% of merchandise exports)
-    - Food exports (% of merchandise exports)
+        - GDP growth (annual %)
+        - Inflation, consumer prices (annual %)
+        - Trade openness (Trade as % of GDP)
+        - Gross capital formation (% of GDP) - proxy for investment
+        - Fuel exports (% of merchandise exports)
+        - Ores and metals exports (% of merchandise exports)
+        - Agricultural raw materials exports (% of merchandise exports)
+        - Food exports (% of merchandise exports)
     
     Args:
         countries: List of ISO3 country codes
@@ -176,7 +229,11 @@ def fetch_wdi_data(
         output_path: Optional path to save CSV
         
     Returns:
-        DataFrame with all indicators
+        DataFrame with all indicators and calculated CDI
+        
+    Example:
+        >>> df = fetch_wdi_data(['NGA', 'ZAF', 'KEN'], 2000, 2023)
+        >>> print(df['cdi_raw'].describe())
     """
     
     # Define indicators
@@ -189,7 +246,8 @@ def fetch_wdi_data(
         
         # Commodity export indicators (for CDI calculation)
         'TX.VAL.FUEL.ZS.UN': 'fuel_exports_pct',        # Fuel exports (% of merchandise exports)
-        'TX.VAL.MMLS.ZS.UN': 'metals_exports_pct',      # Ores and metals exports (% of merch exports)
+        'TX.VAL.MMTL.ZS.UN': 'metals_exports_pct',      # Ores and metals exports (% of merch exports)
+        'TX.VAL.AGRI.ZS.UN': 'agri_exports_pct',        # Agricultural raw materials exports
         'TX.VAL.FOOD.ZS.UN': 'food_exports_pct',        # Food exports (% of merchandise exports)
         
         # Additional useful indicators
@@ -208,25 +266,35 @@ def fetch_wdi_data(
         end_year=end_year
     )
     
+    if df.empty:
+        logger.warning("No data returned from API")
+        return df
+    
     # Calculate CDI (Commodity Dependence Index)
-    # CDI = sum of fuel + metals + food exports as % of total merchandise exports
-    # Handle missing columns gracefully (some indicators may return no data)
-    fuel = df['fuel_exports_pct'].fillna(0) if 'fuel_exports_pct' in df.columns else 0
-    metals = df['metals_exports_pct'].fillna(0) if 'metals_exports_pct' in df.columns else 0
-    food = df['food_exports_pct'].fillna(0) if 'food_exports_pct' in df.columns else 0
+    # CDI = sum of fuel + metals + agri + food exports as % of total merchandise exports
+    # Note: This can exceed 100% if categories overlap or due to data inconsistencies
+    # We cap at 100% for interpretability
     
-    df['cdi_raw'] = fuel + metals + food
+    commodity_cols = ['fuel_exports_pct', 'metals_exports_pct', 'agri_exports_pct', 'food_exports_pct']
     
-    # Log which commodity components are available
+    # Initialize CDI
+    df['cdi_raw'] = 0.0
+    
+    # Sum available commodity export percentages
     available_components = []
-    if 'fuel_exports_pct' in df.columns:
-        available_components.append('fuel')
-    if 'metals_exports_pct' in df.columns:
-        available_components.append('metals')
-    if 'food_exports_pct' in df.columns:
-        available_components.append('food')
+    for col in commodity_cols:
+        if col in df.columns:
+            df['cdi_raw'] += df[col].fillna(0)
+            available_components.append(col.replace('_exports_pct', ''))
+    
+    # Cap CDI at 100%
+    df['cdi_raw'] = df['cdi_raw'].clip(upper=100)
     
     logger.info(f"CDI components available: {', '.join(available_components)}")
+    logger.info(f"CDI range: {df['cdi_raw'].min():.1f}% - {df['cdi_raw'].max():.1f}%")
+    
+    # Sort by country and year
+    df = df.sort_values(['country', 'year']).reset_index(drop=True)
     
     # Save if output path provided
     if output_path:
@@ -236,6 +304,27 @@ def fetch_wdi_data(
         logger.info(f"✓ Data saved to {output_path}")
     
     return df
+
+
+def get_available_indicators() -> Dict[str, str]:
+    """
+    Return dictionary of available indicators for reference.
+    
+    Returns:
+        Dict mapping indicator codes to descriptions
+    """
+    return {
+        'NY.GDP.MKTP.KD.ZG': 'GDP growth (annual %)',
+        'FP.CPI.TOTL.ZG': 'Inflation, consumer prices (annual %)',
+        'NE.TRD.GNFS.ZS': 'Trade (% of GDP)',
+        'NE.GDI.TOTL.ZS': 'Gross capital formation (% of GDP)',
+        'TX.VAL.FUEL.ZS.UN': 'Fuel exports (% of merchandise exports)',
+        'TX.VAL.MMTL.ZS.UN': 'Ores and metals exports (% of merchandise exports)',
+        'TX.VAL.AGRI.ZS.UN': 'Agricultural raw materials exports (% of merchandise exports)',
+        'TX.VAL.FOOD.ZS.UN': 'Food exports (% of merchandise exports)',
+        'NE.EXP.GNFS.ZS': 'Exports of goods and services (% of GDP)',
+        'NE.IMP.GNFS.ZS': 'Imports of goods and services (% of GDP)',
+    }
 
 
 # Example usage and test
@@ -266,3 +355,6 @@ if __name__ == "__main__":
     
     print("\n✅ Missing values per column:")
     print(df.isnull().sum())
+    
+    print("\n🔥 CDI Statistics:")
+    print(df['cdi_raw'].describe())

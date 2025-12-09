@@ -15,7 +15,7 @@ import pandas as pd
 from sklearn.linear_model import Ridge, RidgeCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, List
 import logging
 import joblib
 
@@ -38,6 +38,12 @@ class RidgeRegressionModel:
         scaler: StandardScaler for feature normalization
         feature_names: List of feature column names
         best_alpha: Optimal regularization parameter
+        
+    Example:
+        >>> model = RidgeRegressionModel(cv=5)
+        >>> model.fit(X_train, y_train)
+        >>> predictions = model.predict(X_test)
+        >>> print(model.interpret_coefficients())
     """
     
     def __init__(
@@ -98,10 +104,10 @@ class RidgeRegressionModel:
         logger.info(f"Testing {len(self.alphas)} alpha values with {self.cv}-fold CV...")
         
         self.model = RidgeCV(
-    alphas=self.alphas,
-    cv=self.cv,
-    scoring='neg_mean_squared_error'
-)
+            alphas=self.alphas,
+            cv=self.cv,
+            scoring='neg_mean_squared_error'
+        )
         self.model.fit(X_scaled, y)
         self.best_alpha = self.model.alpha_
         
@@ -158,6 +164,24 @@ class RidgeRegressionModel:
         
         return coef_df
     
+    def get_feature_importance(self) -> pd.DataFrame:
+        """
+        Get feature importance based on absolute coefficient values.
+        
+        Returns:
+            DataFrame with features and their importance scores (normalized)
+        """
+        coef_df = self.get_coefficients()
+        
+        # Normalize to get importance percentages
+        total_abs = coef_df['abs_coefficient'].sum()
+        coef_df['importance'] = coef_df['abs_coefficient'] / total_abs
+        coef_df['importance_pct'] = coef_df['importance'] * 100
+        
+        return coef_df[['feature', 'importance', 'importance_pct']].sort_values(
+            'importance', ascending=False
+        )
+    
     def interpret_coefficients(self) -> str:
         """
         Generate human-readable interpretation of coefficients.
@@ -170,12 +194,13 @@ class RidgeRegressionModel:
         interpretation = "\n" + "=" * 70 + "\n"
         interpretation += "RIDGE REGRESSION COEFFICIENTS INTERPRETATION\n"
         interpretation += "=" * 70 + "\n\n"
-        interpretation += f"Intercept: {self.model.intercept_:.4f}\n\n"
+        interpretation += f"Intercept: {self.model.intercept_:.4f}\n"
+        interpretation += f"Best Alpha (L2 penalty): {self.best_alpha:.4f}\n\n"
         
         interpretation += "Feature Importance (sorted by absolute coefficient):\n"
         interpretation += "-" * 70 + "\n"
         
-        for idx, row in coef_df.iterrows():
+        for _, row in coef_df.iterrows():
             feature = row['feature']
             coef = row['coefficient']
             direction = "increases" if coef > 0 else "decreases"
@@ -193,7 +218,7 @@ class RidgeRegressionModel:
         
         return interpretation
     
-    def save(self, filepath: str):
+    def save(self, filepath: str) -> None:
         """
         Save model to disk.
         
@@ -270,6 +295,10 @@ if __name__ == "__main__":
     # Make predictions
     predictions = model.predict(X[:10])
     print(f"\nSample predictions: {predictions}")
+    
+    # Feature importance
+    print("\nFeature Importance:")
+    print(model.get_feature_importance())
     
     # Save and load
     model.save('test_ridge_model.pkl')
