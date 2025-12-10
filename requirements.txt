@@ -45,3 +45,6 @@ notebook>=6.5.0
 
 # Optional: For better performance
 numba>=0.57.0  # JIT compilation for numerical functions
+
+# Ajoute ces lignes à ton requirements.txt
+shap>=0.42.0 # For SHAP values

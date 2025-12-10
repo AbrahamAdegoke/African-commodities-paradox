@@ -212,7 +212,7 @@ class TestFeatureEngineering:
         )
         
         # Check volatility
-        assert not test_df['gdp_volatility'].iloc[:2].isnull().all()  # First 2 years: NaN
+        assert test_df['gdp_volatility'].iloc[:2].isnull().all()  # First 2 years ARE NaN (min_periods=3)
         assert test_df['gdp_volatility'].iloc[4] > 0  # Should have value by year 5
     
     def test_lagged_features(self):

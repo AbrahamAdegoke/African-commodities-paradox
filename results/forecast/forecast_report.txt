@@ -1,0 +1,38 @@
+
+================================================================================
+GDP GROWTH FORECASTING REPORT
+Stretch Goal: Forecast Next-Year GDP Growth
+================================================================================
+
+Model Type: GBR
+Features: 7
+Feature Scaling: True
+
+CROSS-VALIDATION RESULTS:
+--------------------------------------------------------------------------------
+CV R² Scores: [-0.36559818 -0.01955141 -0.13131009 -0.39240851  0.09613934]
+Mean CV R²: -0.1625 (+/- 0.1910)
+
+FEATURE IMPORTANCE:
+--------------------------------------------------------------------------------
+                 feature  importance  importance_pct
+              gdp_growth    0.535310       53.530972
+        governance_index    0.203614       20.361362
+          trade_openness    0.064494        6.449413
+               inflation    0.059014        5.901437
+              investment    0.049178        4.917825
+              cdi_smooth    0.046354        4.635450
+exchange_rate_volatility    0.042035        4.203541
+
+TEST SET PERFORMANCE:
+--------------------------------------------------------------------------------
+R² Score: -0.2551
+RMSE: 4.3556 percentage points
+MAE: 2.8216 percentage points
+
+INTERPRETATION:
+--------------------------------------------------------------------------------
+The model explains -25.5% of variance in next-year GDP growth.
+On average, forecasts are off by 2.82 percentage points.
+
+================================================================================

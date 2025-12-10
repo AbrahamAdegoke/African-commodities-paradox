@@ -1,0 +1,35 @@
+
+================================================================================
+SHAP ANALYSIS REPORT - AFRICAN COMMODITIES PARADOX
+================================================================================
+
+FEATURE IMPORTANCE (based on mean |SHAP value|):
+--------------------------------------------------------------------------------
+                      feature  shap_importance  importance_pct
+        governance_index_lag1         0.250667       32.363403
+              cdi_smooth_lag1         0.127486       16.459627
+          trade_openness_lag1         0.119911       15.481694
+               inflation_lag1         0.118696       15.324788
+              investment_lag1         0.085444       11.031682
+exchange_rate_volatility_lag1         0.072333        9.338806
+
+KEY FINDINGS:
+--------------------------------------------------------------------------------
+
+1. Most important predictor: governance_index_lag1
+   - Contributes 32.4% to model predictions
+
+2. Feature ranking:
+   5. governance_index_lag1: 32.4%
+   1. cdi_smooth_lag1: 16.5%
+   3. trade_openness_lag1: 15.5%
+   2. inflation_lag1: 15.3%
+   4. investment_lag1: 11.0%
+   6. exchange_rate_volatility_lag1: 9.3%
+
+================================================================================
+
+Plots saved to: results/shap/
+  - shap_importance_bar.png
+  - shap_summary_dot.png
+================================================================================

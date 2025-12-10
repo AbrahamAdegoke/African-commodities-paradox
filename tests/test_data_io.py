@@ -104,7 +104,8 @@ class TestWorldBankAPI:
     @patch('data_io.worldbank.requests.Session.get')
     def test_fetch_indicator_api_error(self, mock_get):
         """Test handling of API errors."""
-        mock_get.side_effect = Exception("API Error")
+        import requests
+        mock_get.side_effect = requests.exceptions.RequestException("API Error")
         
         df = self.api.fetch_indicator(
             countries=['NGA'],
