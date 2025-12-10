@@ -1,0 +1,10 @@
+[run]
+omit = 
+    src/evaluation/shap_analysis.py
+    src/models/gdp_forecaster.py
+    
+[report]
+exclude_lines =
+    if __name__ == .__main__.:
+    def __repr__
+    raise NotImplementedError
