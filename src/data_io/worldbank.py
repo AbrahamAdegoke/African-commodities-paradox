@@ -4,9 +4,11 @@ World Bank Data Collector Module
 This module fetches economic indicators from the World Bank WDI API
 for African countries to analyze the commodities paradox.
 
-Provides two main functions:
-- fetch_wdi_data: High-level function with predefined indicators for the project
-- fetch_wdi: Lower-level function for custom indicator fetching
+Includes:
+- Core macroeconomic indicators (GDP growth, inflation, trade, investment)
+- Commodity export indicators (fuel, metals, food, agriculture)
+- World Governance Indicators (WGI)
+- Exchange rate indicators
 
 Author: Abraham Adegoke
 Date: November 2025
@@ -18,6 +20,7 @@ from typing import List, Dict, Optional, Union
 import time
 import logging
 from pathlib import Path
+import numpy as np
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -210,17 +213,11 @@ def fetch_wdi_data(
     Main function to fetch all WDI indicators needed for the project.
     
     This is the high-level function that fetches all indicators required
-    for the African Commodities Paradox analysis.
-    
-    Indicators fetched:
-        - GDP growth (annual %)
-        - Inflation, consumer prices (annual %)
-        - Trade openness (Trade as % of GDP)
-        - Gross capital formation (% of GDP) - proxy for investment
-        - Fuel exports (% of merchandise exports)
-        - Ores and metals exports (% of merchandise exports)
-        - Agricultural raw materials exports (% of merchandise exports)
-        - Food exports (% of merchandise exports)
+    for the African Commodities Paradox analysis, including:
+    - Core macroeconomic indicators
+    - Commodity export indicators
+    - World Governance Indicators
+    - Exchange rate indicators
     
     Args:
         countries: List of ISO3 country codes
@@ -236,27 +233,59 @@ def fetch_wdi_data(
         >>> print(df['cdi_raw'].describe())
     """
     
-    # Define indicators
+    # Define ALL indicators needed for the project
     indicators = {
-        # Core macroeconomic indicators
+        # ===========================================
+        # CORE MACROECONOMIC INDICATORS
+        # ===========================================
         'NY.GDP.MKTP.KD.ZG': 'gdp_growth',              # GDP growth (annual %)
         'FP.CPI.TOTL.ZG': 'inflation',                  # Inflation, consumer prices (annual %)
         'NE.TRD.GNFS.ZS': 'trade_openness',             # Trade (% of GDP)
         'NE.GDI.TOTL.ZS': 'investment',                 # Gross capital formation (% of GDP)
         
-        # Commodity export indicators (for CDI calculation)
+        # ===========================================
+        # COMMODITY EXPORT INDICATORS (for CDI)
+        # ===========================================
         'TX.VAL.FUEL.ZS.UN': 'fuel_exports_pct',        # Fuel exports (% of merchandise exports)
         'TX.VAL.MMTL.ZS.UN': 'metals_exports_pct',      # Ores and metals exports (% of merch exports)
         'TX.VAL.AGRI.ZS.UN': 'agri_exports_pct',        # Agricultural raw materials exports
         'TX.VAL.FOOD.ZS.UN': 'food_exports_pct',        # Food exports (% of merchandise exports)
         
-        # Additional useful indicators
+        # ===========================================
+        # EXCHANGE RATE INDICATORS
+        # ===========================================
+        'PA.NUS.FCRF': 'exchange_rate',                 # Official exchange rate (LCU per US$)
+        'PX.REX.REER': 'real_eff_exchange_rate',        # Real effective exchange rate index
+        
+        # ===========================================
+        # WORLD GOVERNANCE INDICATORS (WGI)
+        # ===========================================
+        'CC.EST': 'control_corruption',                 # Control of Corruption: Estimate
+        'GE.EST': 'govt_effectiveness',                 # Government Effectiveness: Estimate
+        'PV.EST': 'political_stability',                # Political Stability: Estimate
+        'RQ.EST': 'regulatory_quality',                 # Regulatory Quality: Estimate
+        'RL.EST': 'rule_of_law',                        # Rule of Law: Estimate
+        'VA.EST': 'voice_accountability',               # Voice and Accountability: Estimate
+        
+        # ===========================================
+        # ADDITIONAL USEFUL INDICATORS
+        # ===========================================
         'NE.EXP.GNFS.ZS': 'exports_gdp',                # Exports of goods and services (% of GDP)
         'NE.IMP.GNFS.ZS': 'imports_gdp',                # Imports of goods and services (% of GDP)
+        'BN.CAB.XOKA.GD.ZS': 'current_account_gdp',     # Current account balance (% of GDP)
+        'DT.DOD.DECT.GN.ZS': 'external_debt_gni',       # External debt stocks (% of GNI)
     }
     
     # Initialize API client
     api = WorldBankAPI()
+    
+    logger.info("=" * 70)
+    logger.info("FETCHING WORLD BANK DATA")
+    logger.info("=" * 70)
+    logger.info(f"Countries: {len(countries)}")
+    logger.info(f"Indicators: {len(indicators)}")
+    logger.info(f"Period: {start_year}-{end_year}")
+    logger.info("=" * 70)
     
     # Fetch all indicators
     df = api.fetch_multiple_indicators(
@@ -270,10 +299,10 @@ def fetch_wdi_data(
         logger.warning("No data returned from API")
         return df
     
-    # Calculate CDI (Commodity Dependence Index)
-    # CDI = sum of fuel + metals + agri + food exports as % of total merchandise exports
-    # Note: This can exceed 100% if categories overlap or due to data inconsistencies
-    # We cap at 100% for interpretability
+    # ===========================================
+    # CALCULATE COMMODITY DEPENDENCE INDEX (CDI)
+    # ===========================================
+    logger.info("\n📊 Calculating Commodity Dependence Index (CDI)...")
     
     commodity_cols = ['fuel_exports_pct', 'metals_exports_pct', 'agri_exports_pct', 'food_exports_pct']
     
@@ -285,23 +314,74 @@ def fetch_wdi_data(
     for col in commodity_cols:
         if col in df.columns:
             df['cdi_raw'] += df[col].fillna(0)
-            available_components.append(col.replace('_exports_pct', ''))
+            available_components.append(col.replace('_exports_pct', '').replace('_pct', ''))
     
     # Cap CDI at 100%
     df['cdi_raw'] = df['cdi_raw'].clip(upper=100)
     
-    logger.info(f"CDI components available: {', '.join(available_components)}")
-    logger.info(f"CDI range: {df['cdi_raw'].min():.1f}% - {df['cdi_raw'].max():.1f}%")
+    logger.info(f"  CDI components: {', '.join(available_components)}")
+    logger.info(f"  CDI range: {df['cdi_raw'].min():.1f}% - {df['cdi_raw'].max():.1f}%")
+    
+    # ===========================================
+    # CALCULATE EXCHANGE RATE VOLATILITY
+    # ===========================================
+    logger.info("\n📈 Calculating Exchange Rate Volatility...")
+    
+    df = df.sort_values(['country', 'year'])
+    
+    if 'exchange_rate' in df.columns:
+        # Calculate year-over-year % change in exchange rate
+        df['exchange_rate_change'] = df.groupby('country')['exchange_rate'].pct_change() * 100
+        
+        # Calculate 3-year rolling volatility of exchange rate changes
+        df['exchange_rate_volatility'] = df.groupby('country')['exchange_rate_change'].transform(
+            lambda x: x.rolling(window=3, min_periods=2).std()
+        )
+        logger.info("  ✓ Exchange rate volatility calculated (3-year rolling std)")
+    else:
+        logger.warning("  ⚠ Exchange rate data not available")
+    
+    # ===========================================
+    # CALCULATE COMPOSITE GOVERNANCE INDEX
+    # ===========================================
+    logger.info("\n🏛️  Calculating Composite Governance Index...")
+    
+    governance_cols = [
+        'control_corruption', 'govt_effectiveness', 'political_stability',
+        'regulatory_quality', 'rule_of_law', 'voice_accountability'
+    ]
+    
+    available_gov = [col for col in governance_cols if col in df.columns]
+    
+    if available_gov:
+        # WGI scores range from -2.5 (weak) to 2.5 (strong)
+        # Calculate average of available governance indicators
+        df['governance_index'] = df[available_gov].mean(axis=1)
+        logger.info(f"  ✓ Governance index calculated from {len(available_gov)} indicators")
+        logger.info(f"  Governance range: {df['governance_index'].min():.2f} to {df['governance_index'].max():.2f}")
+    else:
+        logger.warning("  ⚠ Governance indicators not available")
     
     # Sort by country and year
     df = df.sort_values(['country', 'year']).reset_index(drop=True)
+    
+    # ===========================================
+    # SUMMARY
+    # ===========================================
+    logger.info("\n" + "=" * 70)
+    logger.info("DATA FETCH COMPLETE")
+    logger.info("=" * 70)
+    logger.info(f"Total records: {len(df)}")
+    logger.info(f"Countries: {df['country'].nunique()}")
+    logger.info(f"Years: {df['year'].min()} - {df['year'].max()}")
+    logger.info(f"Columns: {len(df.columns)}")
     
     # Save if output path provided
     if output_path:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(output_path, index=False)
-        logger.info(f"✓ Data saved to {output_path}")
+        logger.info(f"\n✓ Data saved to {output_path}")
     
     return df
 
@@ -314,16 +394,35 @@ def get_available_indicators() -> Dict[str, str]:
         Dict mapping indicator codes to descriptions
     """
     return {
+        # Core macro
         'NY.GDP.MKTP.KD.ZG': 'GDP growth (annual %)',
         'FP.CPI.TOTL.ZG': 'Inflation, consumer prices (annual %)',
         'NE.TRD.GNFS.ZS': 'Trade (% of GDP)',
         'NE.GDI.TOTL.ZS': 'Gross capital formation (% of GDP)',
+        
+        # Commodity exports
         'TX.VAL.FUEL.ZS.UN': 'Fuel exports (% of merchandise exports)',
         'TX.VAL.MMTL.ZS.UN': 'Ores and metals exports (% of merchandise exports)',
         'TX.VAL.AGRI.ZS.UN': 'Agricultural raw materials exports (% of merchandise exports)',
         'TX.VAL.FOOD.ZS.UN': 'Food exports (% of merchandise exports)',
+        
+        # Exchange rate
+        'PA.NUS.FCRF': 'Official exchange rate (LCU per US$)',
+        'PX.REX.REER': 'Real effective exchange rate index',
+        
+        # Governance (WGI)
+        'CC.EST': 'Control of Corruption: Estimate (-2.5 to 2.5)',
+        'GE.EST': 'Government Effectiveness: Estimate (-2.5 to 2.5)',
+        'PV.EST': 'Political Stability: Estimate (-2.5 to 2.5)',
+        'RQ.EST': 'Regulatory Quality: Estimate (-2.5 to 2.5)',
+        'RL.EST': 'Rule of Law: Estimate (-2.5 to 2.5)',
+        'VA.EST': 'Voice and Accountability: Estimate (-2.5 to 2.5)',
+        
+        # Other
         'NE.EXP.GNFS.ZS': 'Exports of goods and services (% of GDP)',
         'NE.IMP.GNFS.ZS': 'Imports of goods and services (% of GDP)',
+        'BN.CAB.XOKA.GD.ZS': 'Current account balance (% of GDP)',
+        'DT.DOD.DECT.GN.ZS': 'External debt stocks (% of GNI)',
     }
 
 
@@ -358,3 +457,11 @@ if __name__ == "__main__":
     
     print("\n🔥 CDI Statistics:")
     print(df['cdi_raw'].describe())
+    
+    if 'governance_index' in df.columns:
+        print("\n🏛️ Governance Index Statistics:")
+        print(df['governance_index'].describe())
+    
+    if 'exchange_rate_volatility' in df.columns:
+        print("\n💱 Exchange Rate Volatility Statistics:")
+        print(df['exchange_rate_volatility'].describe())

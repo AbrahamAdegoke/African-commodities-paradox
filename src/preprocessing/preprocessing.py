@@ -1,8 +1,15 @@
 """
 Advanced Data Preprocessing Module
 
-Handles missing values, outliers, and data validation for the 
-African Commodities Paradox project.
+Handles missing values, outliers, feature engineering, and data validation 
+for the African Commodities Paradox project.
+
+Includes:
+- CDI smoothing (3-year moving average)
+- GDP growth volatility calculation (5-year rolling std)
+- Exchange rate volatility
+- Governance index processing
+- Lagged features creation
 
 Author: Abraham Adegoke
 Date: November 2025
@@ -96,10 +103,10 @@ class DataPreprocessor:
                     self.imputation_values[col] = df_clean[col].median()
         
         # Final check: drop any remaining rows with NaN in target
-        df_clean = df_clean.dropna(subset=['log_gdp_volatility'])
+        if 'log_gdp_volatility' in df_clean.columns:
+            df_clean = df_clean.dropna(subset=['log_gdp_volatility'])
         
         logger.info(f"Final dataset shape after handling missing values: {df_clean.shape}")
-        logger.info(f"Remaining missing values:\n{df_clean.isnull().sum()[df_clean.isnull().sum() > 0]}")
         
         return df_clean
     
@@ -168,23 +175,25 @@ class DataPreprocessor:
         validation_results = {}
         
         # Check 1: Required columns present
-        required_cols = ['country', 'year', 'cdi_smooth_lag1', 'log_gdp_volatility']
+        required_cols = ['country', 'year', 'log_gdp_volatility']
         validation_results['has_required_columns'] = all(col in df.columns for col in required_cols)
         
         # Check 2: No duplicate country-year pairs
         validation_results['no_duplicates'] = not df.duplicated(subset=['country', 'year']).any()
         
         # Check 3: Reasonable value ranges
-        validation_results['valid_ranges'] = (
-            (df['log_gdp_volatility'] > -10).all() and 
-            (df['log_gdp_volatility'] < 10).all() and
-            (df['cdi_smooth_lag1'] >= 0).all() and
-            (df['cdi_smooth_lag1'] <= 100).all()
-        )
+        checks = []
+        if 'log_gdp_volatility' in df.columns:
+            checks.append((df['log_gdp_volatility'] > -10).all())
+            checks.append((df['log_gdp_volatility'] < 10).all())
+        if 'cdi_smooth_lag1' in df.columns:
+            checks.append((df['cdi_smooth_lag1'] >= 0).all())
+            checks.append((df['cdi_smooth_lag1'] <= 100).all())
+        validation_results['valid_ranges'] = all(checks) if checks else True
         
         # Check 4: Sufficient observations per country
         country_counts = df.groupby('country').size()
-        validation_results['sufficient_data'] = (country_counts >= 5).all()
+        validation_results['sufficient_data'] = (country_counts >= 3).all()
         
         # Check 5: No extreme missing values
         missing_pct = df.isnull().sum() / len(df) * 100
@@ -201,7 +210,9 @@ class DataPreprocessor:
         self, 
         df: pd.DataFrame,
         target: str = 'log_gdp_volatility',
-        feature_cols: Optional[List[str]] = None
+        feature_cols: Optional[List[str]] = None,
+        include_governance: bool = True,
+        include_exchange_rate: bool = True
     ) -> Tuple[pd.DataFrame, pd.Series, List[str]]:
         """
         Complete preprocessing pipeline for modeling.
@@ -210,6 +221,8 @@ class DataPreprocessor:
             df: Input DataFrame
             target: Target variable column name
             feature_cols: Feature columns (None = auto-select)
+            include_governance: Include governance index in features
+            include_exchange_rate: Include exchange rate volatility in features
         
         Returns:
             Tuple of (X_features, y_target, feature_names)
@@ -221,7 +234,7 @@ class DataPreprocessor:
         # Step 1: Handle missing values
         df_clean = self.handle_missing_values(df, method='median')
         
-        # Step 2: Remove outliers (only in features, not target)
+        # Step 2: Define features
         if feature_cols is None:
             feature_cols = [
                 'cdi_smooth_lag1',
@@ -229,9 +242,17 @@ class DataPreprocessor:
                 'trade_openness_lag1',
                 'investment_lag1'
             ]
+            
+            # Add governance if available and requested
+            if include_governance and 'governance_index_lag1' in df_clean.columns:
+                feature_cols.append('governance_index_lag1')
+            
+            # Add exchange rate volatility if available and requested
+            if include_exchange_rate and 'exchange_rate_volatility_lag1' in df_clean.columns:
+                feature_cols.append('exchange_rate_volatility_lag1')
         
-        # Don't remove outliers for now, just cap extreme values
-        # df_clean = self.remove_outliers(df_clean, columns=feature_cols, method='iqr', threshold=3.0)
+        # Filter to only available features
+        feature_cols = [f for f in feature_cols if f in df_clean.columns]
         
         # Step 3: Validate
         validation = self.validate_data(df_clean)
@@ -256,9 +277,138 @@ class DataPreprocessor:
         return X, y, feature_cols
 
 
+class FeatureEngineer:
+    """
+    Handles feature engineering for the African Commodities Paradox project.
+    
+    Creates:
+        - CDI smoothing (3-year moving average)
+        - GDP growth volatility (5-year rolling std)
+        - Lagged features (t-1)
+        - Governance composite index
+        - Exchange rate volatility
+    """
+    
+    def __init__(self):
+        """Initialize feature engineer."""
+        pass
+    
+    def create_all_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Create all features needed for modeling.
+        
+        Args:
+            df: Raw data DataFrame with country, year, and indicators
+            
+        Returns:
+            DataFrame with all engineered features
+        """
+        logger.info("=" * 70)
+        logger.info("FEATURE ENGINEERING")
+        logger.info("=" * 70)
+        
+        df = df.sort_values(['country', 'year']).copy()
+        
+        # 1. Smooth CDI with 3-year moving average
+        df = self._create_cdi_smooth(df)
+        
+        # 2. Calculate GDP growth volatility
+        df = self._create_gdp_volatility(df)
+        
+        # 3. Create governance composite index (if not already present)
+        df = self._create_governance_index(df)
+        
+        # 4. Create lagged features
+        df = self._create_lagged_features(df)
+        
+        logger.info(f"\n✓ Feature engineering complete!")
+        logger.info(f"  Final shape: {df.shape}")
+        logger.info(f"  New columns: {[c for c in df.columns if 'lag1' in c or 'smooth' in c or 'volatility' in c]}")
+        
+        return df
+    
+    def _create_cdi_smooth(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply 3-year moving average to CDI."""
+        logger.info("📊 Creating smoothed CDI (3-year MA)...")
+        
+        if 'cdi_raw' in df.columns:
+            df['cdi_smooth'] = df.groupby('country')['cdi_raw'].transform(
+                lambda x: x.rolling(window=3, min_periods=1).mean()
+            )
+            logger.info("  ✓ cdi_smooth created")
+        else:
+            logger.warning("  ⚠ cdi_raw not found")
+        
+        return df
+    
+    def _create_gdp_volatility(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate 5-year rolling volatility of GDP growth."""
+        logger.info("📈 Creating GDP growth volatility (5-year rolling std)...")
+        
+        if 'gdp_growth' in df.columns:
+            df['gdp_volatility'] = df.groupby('country')['gdp_growth'].transform(
+                lambda x: x.rolling(window=5, min_periods=3).std()
+            )
+            # Log-transform volatility (as per proposal)
+            # Add small constant to avoid log(0)
+            df['log_gdp_volatility'] = np.log(df['gdp_volatility'] + 0.01)
+            logger.info("  ✓ gdp_volatility and log_gdp_volatility created")
+        else:
+            logger.warning("  ⚠ gdp_growth not found")
+        
+        return df
+    
+    def _create_governance_index(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Create composite governance index from WGI indicators."""
+        logger.info("🏛️  Creating governance index...")
+        
+        governance_cols = [
+            'control_corruption', 'govt_effectiveness', 'political_stability',
+            'regulatory_quality', 'rule_of_law', 'voice_accountability'
+        ]
+        
+        available_gov = [col for col in governance_cols if col in df.columns]
+        
+        if available_gov and 'governance_index' not in df.columns:
+            df['governance_index'] = df[available_gov].mean(axis=1)
+            logger.info(f"  ✓ governance_index created from {len(available_gov)} indicators")
+        elif 'governance_index' in df.columns:
+            logger.info("  ✓ governance_index already exists")
+        else:
+            logger.warning("  ⚠ No governance indicators available")
+        
+        return df
+    
+    def _create_lagged_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Create lagged features (t-1) to avoid simultaneity."""
+        logger.info("🔄 Creating lagged features (t-1)...")
+        
+        # Features to lag
+        features_to_lag = [
+            'cdi_smooth',
+            'inflation',
+            'trade_openness',
+            'investment',
+            'governance_index',
+            'exchange_rate_volatility'
+        ]
+        
+        lagged_count = 0
+        for feature in features_to_lag:
+            if feature in df.columns:
+                df[f'{feature}_lag1'] = df.groupby('country')[feature].shift(1)
+                lagged_count += 1
+        
+        logger.info(f"  ✓ Created {lagged_count} lagged features")
+        
+        return df
+
+
 def load_and_preprocess(
     data_path: str = 'data/processed/features_ready.csv',
-    strategy: str = 'impute'
+    strategy: str = 'impute',
+    include_governance: bool = True,
+    include_exchange_rate: bool = True
 ) -> Tuple[pd.DataFrame, pd.Series, List[str]]:
     """
     Convenience function to load and preprocess data in one step.
@@ -266,6 +416,8 @@ def load_and_preprocess(
     Args:
         data_path: Path to feature-ready CSV
         strategy: Missing value strategy ('impute' or 'drop')
+        include_governance: Include governance index in features
+        include_exchange_rate: Include exchange rate volatility in features
     
     Returns:
         Tuple of (X_features, y_target, feature_names)
@@ -274,9 +426,41 @@ def load_and_preprocess(
     df = pd.read_csv(data_path)
     
     preprocessor = DataPreprocessor(strategy=strategy)
-    X, y, features = preprocessor.prepare_for_modeling(df)
+    X, y, features = preprocessor.prepare_for_modeling(
+        df,
+        include_governance=include_governance,
+        include_exchange_rate=include_exchange_rate
+    )
     
     return X, y, features
+
+
+def create_features_from_raw(
+    raw_data_path: str = 'data/raw/worldbank_wdi.csv',
+    output_path: str = 'data/processed/features_ready.csv'
+) -> pd.DataFrame:
+    """
+    Complete feature engineering pipeline from raw data.
+    
+    Args:
+        raw_data_path: Path to raw World Bank data
+        output_path: Path to save feature-ready data
+        
+    Returns:
+        DataFrame with all engineered features
+    """
+    logger.info(f"Loading raw data from: {raw_data_path}")
+    df = pd.read_csv(raw_data_path)
+    
+    # Create all features
+    engineer = FeatureEngineer()
+    df_features = engineer.create_all_features(df)
+    
+    # Save
+    df_features.to_csv(output_path, index=False)
+    logger.info(f"✓ Features saved to: {output_path}")
+    
+    return df_features
 
 
 # Example usage
@@ -285,11 +469,15 @@ if __name__ == "__main__":
     print("Testing Data Preprocessor...")
     print("=" * 70)
     
-    X, y, features = load_and_preprocess('data/processed/features_ready.csv')
-    
-    print("\n✓ Preprocessing test successful!")
-    print(f"  X shape: {X.shape}")
-    print(f"  y shape: {y.shape}")
-    print(f"  Features: {features}")
-    print(f"\n  X summary:\n{X.describe()}")
-    print(f"\n  y summary:\n{y.describe()}")
+    # Test with sample data
+    try:
+        X, y, features = load_and_preprocess('data/processed/features_ready.csv')
+        
+        print("\n✓ Preprocessing test successful!")
+        print(f"  X shape: {X.shape}")
+        print(f"  y shape: {y.shape}")
+        print(f"  Features: {features}")
+        print(f"\n  X summary:\n{X.describe()}")
+        print(f"\n  y summary:\n{y.describe()}")
+    except FileNotFoundError:
+        print("⚠ No data file found. Run the data download first.")

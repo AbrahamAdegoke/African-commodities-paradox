@@ -4,12 +4,22 @@
 """
 Preprocessing package for data cleaning and preparation.
 
-Handles missing values, outliers, and data validation.
+Contains:
+    - DataPreprocessor: Handles missing values, outliers, validation
+    - FeatureEngineer: Creates CDI smoothing, volatility, lagged features
+    - Convenience functions for quick data loading
 """
 
-from .preprocessing import DataPreprocessor, load_and_preprocess
+from .preprocessing import (
+    DataPreprocessor, 
+    FeatureEngineer,
+    load_and_preprocess,
+    create_features_from_raw
+)
 
 __all__ = [
     'DataPreprocessor',
-    'load_and_preprocess'
+    'FeatureEngineer',
+    'load_and_preprocess',
+    'create_features_from_raw'
 ]
