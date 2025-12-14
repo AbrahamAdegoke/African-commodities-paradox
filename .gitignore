@@ -69,4 +69,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
-*.swp
+*.swp.DS_Store
+*.pyc
+__pycache__/
