@@ -1,0 +1,30 @@
+forecast_ci = forecast_result.conf_int()
+
+# Create forecast DataFrame
+last_year = int(self.data['year'].max())
+forecast_years = [last_year + i + 1 for i in range(periods)]
+
+forecast_df = pd.DataFrame({
+    'year': forecast_years,
+    'forecast': forecast_mean if isinstance(forecast_mean, np.ndarray) else forecast_mean.values,
+    'lower_ci': forecast_ci[:, 0],
+    'upper_ci': forecast_ci[:, 1]
+})
+
+logger.info(f"  Forecast for {forecast_years}:")
+for _, row in forecast_df.iterrows():
+    logger.info(f"    {int(row['year'])}: {row['forecast']:.2f} [{row['lower_ci']:.2f}, {row['upper_ci']:.2f}]")
+
+return forecast_df
+
+def plot_decomposition(self, save_path: Optional[str] = None) -> plt.Figure:
+    """Plot time series decomposition."""
+
+def test_hello_world():
+    assert True  # Replace with actual test cases
+
+def test_example_function():
+    assert example_function() == expected_value  # Replace with actual test cases
+
+def test_another_example():
+    assert another_example_function() == another_expected_value  # Replace with actual test cases
