@@ -143,11 +143,11 @@ def assess_data_quality(df: pd.DataFrame) -> pd.DataFrame:
         
         # Determine quality level
         if quality_score >= 70:
-            quality_level = "🟢 Good"
+            quality_level = "Good"
         elif quality_score >= 50:
-            quality_level = "🟡 Moderate"
+            quality_level = "Moderate"
         else:
-            quality_level = "🔴 Low"
+            quality_level = "Low"
         
         quality_metrics.append({
             'country': country,
@@ -286,7 +286,7 @@ def main():
                 country_codes_list.append(country_codes[c])
         
         if not country_codes_list:
-            st.error("❌ No valid countries selected")
+            st.error("No valid countries selected")
             st.stop()
         
         df_filtered = df[
@@ -340,7 +340,7 @@ def show_country_analysis(df, country_name, model, country_codes):
     if country_code in COUNTRIES_WITH_CAUTION:
         caution_info = COUNTRIES_WITH_CAUTION[country_code]
         st.warning(f"""
-        ⚠️ **Data Quality Warning for {country_name}**
+        **Data Quality Warning for {country_name}**
         
         {caution_info['reason']}
         
@@ -497,11 +497,11 @@ def show_country_analysis(df, country_name, model, country_codes):
                 st.success(f"**Predicted Volatility (next year):** {np.exp(prediction):.2f}")
                 
                 if np.exp(prediction) > 2.0:
-                    st.warning("⚠️ HIGH volatility expected")
+                    st.warning("HIGH volatility expected")
                 elif np.exp(prediction) > 1.0:
                     st.info("ℹ️ MODERATE volatility expected")
                 else:
-                    st.success("✅ LOW volatility expected")
+                    st.success("LOW volatility expected")
             
             with col2:
                 st.write("**Key Risk Factors:**")
@@ -509,19 +509,19 @@ def show_country_analysis(df, country_name, model, country_codes):
                 risk_factors = []
                 cdi_val = latest_data.get('cdi_smooth', latest_data.get('cdi_raw', 0))
                 if pd.notna(cdi_val) and cdi_val > 70:
-                    risk_factors.append("🔴 High commodity dependence")
+                    risk_factors.append("- High commodity dependence")
                 inflation_val = latest_data.get('inflation', 0)
                 if pd.notna(inflation_val) and inflation_val > 10:
-                    risk_factors.append("🔴 High inflation")
+                    risk_factors.append("- High inflation")
                 investment_val = latest_data.get('investment', 0)
                 if pd.notna(investment_val) and investment_val < 20:
-                    risk_factors.append("🔴 Low investment")
+                    risk_factors.append("Low investment")
                 governance_val = latest_data.get('governance_index', 0)
                 if pd.notna(governance_val) and governance_val < -0.5:
-                    risk_factors.append("🔴 Weak governance")
+                    risk_factors.append("- Weak governance")
                 
                 if not risk_factors:
-                    st.success("✅ No major risk factors identified")
+                    st.success("No major risk factors identified")
                 else:
                     for factor in risk_factors:
                         st.write(factor)
@@ -684,13 +684,13 @@ def show_gdp_forecasting(df, country_name, gdp_model, country_codes):
                 if prediction > 5:
                     st.success("🚀 **Strong growth** expected! Economy likely to expand significantly.")
                 elif prediction > 2:
-                    st.success("📈 **Moderate growth** expected. Positive economic outlook.")
+                    st.success("**Moderate growth** expected. Positive economic outlook.")
                 elif prediction > 0:
-                    st.info("📊 **Slow growth** expected. Economy growing but slowly.")
+                    st.info("**Slow growth** expected. Economy growing but slowly.")
                 elif prediction > -2:
-                    st.warning("⚠️ **Slight contraction** possible. Economic headwinds ahead.")
+                    st.warning("**Slight contraction** possible. Economic headwinds ahead.")
                 else:
-                    st.error("🔴 **Recession risk**. Significant economic challenges expected.")
+                    st.error("**Recession risk**. Significant economic challenges expected.")
                 
                 # Comparison with historical average
                 if 'gdp_growth' in df_country.columns:
@@ -698,7 +698,7 @@ def show_gdp_forecasting(df, country_name, gdp_model, country_codes):
                     diff = prediction - hist_avg
                     
                     if diff > 0:
-                        st.write(f"📈 This is **{diff:.1f}pp above** the historical average ({hist_avg:.1f}%)")
+                        st.write(f"This is **{diff:.1f}pp above** the historical average ({hist_avg:.1f}%)")
                     else:
                         st.write(f"📉 This is **{abs(diff):.1f}pp below** the historical average ({hist_avg:.1f}%)")
             
@@ -735,7 +735,7 @@ def show_gdp_forecasting(df, country_name, gdp_model, country_codes):
             st.info("The model may not have the required features. Try retraining with: `python scripts/train_models.py --include-forecast`")
     
     else:
-        st.warning("⚠️ GDP Forecasting model not available.")
+        st.warning("GDP Forecasting model not available.")
         st.info("""
         To enable GDP forecasting, train the model with:
         ```
@@ -801,7 +801,7 @@ def show_time_series_analysis(df, country_name, country_codes, country_names):
     target_options = [c for c in numeric_cols if c not in exclude_cols and df_country[c].notna().sum() > 5]
     
     if not target_options:
-        st.error("❌ No suitable variables for time series analysis")
+        st.error("No suitable variables for time series analysis")
         return
     
     default_target = 'gdp_growth' if 'gdp_growth' in target_options else target_options[0]
@@ -850,7 +850,7 @@ def show_time_series_analysis(df, country_name, country_codes, country_names):
             st.metric("R² (Fit)", f"{r_value**2:.3f}")
         
         with col4:
-            significant = "✅ Yes" if p_value < 0.05 else "❌ No"
+            significant = "Yes" if p_value < 0.05 else "No"
             st.metric("Significant?", significant)
         
         # Plot
@@ -982,7 +982,7 @@ def show_time_series_analysis(df, country_name, country_codes, country_names):
             with col2:
                 is_stationary = adf_result[1] < 0.05
                 if is_stationary:
-                    st.success("✅ Series is STATIONARY")
+                    st.success("Series is STATIONARY")
                     st.write("The series does not have a unit root - it's stable over time.")
                 else:
                     st.warning("⚠️ Series is NON-STATIONARY")
@@ -1227,7 +1227,7 @@ def show_unsupervised_analysis(df, country_names, country_codes):
             available_features.append(f)
     
     if len(available_features) < 2:
-        st.error("❌ Not enough features available for clustering. Need at least 2 features.")
+        st.error("Not enough features available for clustering. Need at least 2 features.")
         return
     
     # Select features
@@ -1257,7 +1257,7 @@ def show_unsupervised_analysis(df, country_names, country_codes):
     country_data['country_name'] = country_data['country_name'].fillna(country_data['country'])
     
     if len(country_data) < n_clusters:
-        st.error(f"❌ Not enough countries with complete data. Found {len(country_data)}, need at least {n_clusters}")
+        st.error(f"Not enough countries with complete data. Found {len(country_data)}, need at least {n_clusters}")
         return
     
     st.success(f"✓ Analyzing {len(country_data)} countries with {len(selected_features)} features")
@@ -1291,7 +1291,7 @@ def show_unsupervised_analysis(df, country_names, country_codes):
             avg_gov = cluster_df['governance_index'].mean() if 'governance_index' in cluster_df.columns else 0
             
             if avg_cdi > 60 and avg_gov < -0.3:
-                cluster_names[c] = "🔴 Resource Curse"
+                cluster_names[c] = "Resource Curse"
             elif avg_cdi > 60 and avg_gov >= -0.3:
                 cluster_names[c] = "🟡 Managed Resources"
             elif avg_cdi <= 40:
@@ -1547,9 +1547,9 @@ def show_unsupervised_analysis(df, country_names, country_codes):
         moderate_count = len(quality_df[quality_df['quality_level'].str.contains('Moderate')])
         low_count = len(quality_df[quality_df['quality_level'].str.contains('Low')])
         
-        col1.metric("🟢 Good Quality", f"{good_count} countries")
-        col2.metric("🟡 Moderate Quality", f"{moderate_count} countries")
-        col3.metric("🔴 Low Quality", f"{low_count} countries")
+        col1.metric("Good Quality", f"{good_count} countries")
+        col2.metric("Moderate Quality", f"{moderate_count} countries")
+        col3.metric("Low Quality", f"{low_count} countries")
         
         # Countries with caution warnings
         st.write("### ⚠️ Countries Requiring Caution")
@@ -1583,9 +1583,9 @@ def show_unsupervised_analysis(df, country_names, country_codes):
         st.markdown("""
         | Quality Level | Score | Interpretation |
         |---------------|-------|----------------|
-        | 🟢 Good | 70-100 | Results are reliable |
-        | 🟡 Moderate | 50-69 | Results should be cross-checked |
-        | 🔴 Low | 0-49 | Results may be misleading - use with caution |
+        | Good | 70-100 | Results are reliable |
+        | Moderate | 50-69 | Results should be cross-checked |
+        | Low | 0-49 | Results may be misleading - use with caution |
         
         **Factors reducing quality score:**
         - Less than 10 years of data: -5 points per missing year
@@ -1606,7 +1606,7 @@ def show_unsupervised_analysis(df, country_names, country_codes):
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("### 🔴 Resource Curse Pattern")
+        st.markdown("### Resource Curse Pattern")
         if len(resource_curse_countries) > 0:
             st.write(f"**{len(resource_curse_countries)} countries** show the classic paradox:")
             st.write("• High commodity dependence")
