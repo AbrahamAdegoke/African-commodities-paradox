@@ -10,6 +10,39 @@ A machine learning project investigating why resource-rich African economies oft
 
 ---
 
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10 or higher
+- pip package manager
+
+### Installation & Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/AbrahamAdegoke/African-commodities-paradox.git
+cd African-commodities-paradox
+
+# 2. Create virtual environment
+python -m venv venv
+
+# 3. Activate virtual environment
+source venv/bin/activate        # Mac/Linux
+# venv\Scripts\activate         # Windows
+
+# 4. Install dependencies
+pip install -r requirements.txt
+
+# 5. Run the analysis
+python main.py
+
+# 6. (Optional) Launch interactive dashboard
+streamlit run app.py
+```
+
+---
+
 ## Project Overview
 
 ### The Problem
@@ -58,28 +91,10 @@ Many African economies rely heavily on commodity exports (oil, minerals, agricul
 
 ---
 
-## Quick Start
+## Running the Project
 
-### Prerequisites
-
-- Python 3.10 or higher
-- pip package manager
-
-### Installation
-
+### Main Analysis
 ```bash
-# Clone the repository
-git clone https://github.com/AbrahamAdegoke/African-commodities-paradox.git
-cd African-commodities-paradox
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Running the Analysis
-
-```bash
-# Run the complete analysis pipeline
 python main.py
 ```
 
@@ -90,9 +105,7 @@ Expected output:
 - Key findings and insights
 
 ### Interactive Dashboard
-
 ```bash
-# Launch the Streamlit web application
 streamlit run app.py
 ```
 
@@ -103,9 +116,7 @@ Features:
 - Time series analysis and forecasting
 
 ### Running Tests
-
 ```bash
-# Run all 141 tests with coverage report
 pytest tests/ --cov=src --cov-report=term-missing
 ```
 
@@ -120,7 +131,7 @@ african-commodities-paradox/
 ├── main.py                     # Main entry point (run this!)
 ├── app.py                      # Streamlit dashboard
 ├── requirements.txt            # Python dependencies
-├── project_report.pdf          # Technical report (10 pages)
+├── project_report.pdf          # Technical report
 ├── README.md                   # This file
 ├── PROPOSAL.md                 # Project proposal
 ├── AI_USAGE.md                 # AI tools disclosure
@@ -138,7 +149,7 @@ african-commodities-paradox/
 │   │   ├── pca_analysis.py     # Principal Component Analysis
 │   │   └── time_series.py      # ARIMA, trend analysis
 │   └── evaluation/
-│       └── metrics.py          # R², RMSE, MAE, SHAP
+│       └── metrics.py          # R², RMSE, MAE
 │
 ├── tests/                      # Unit tests (141 tests, 88% coverage)
 │   ├── test_clustering.py
@@ -160,7 +171,6 @@ african-commodities-paradox/
 │   └── 00_quickstart.ipynb     # Interactive exploration
 │
 ├── results/                    # Model outputs and figures
-│   └── figures/
 │
 └── scripts/                    # Pipeline scripts
     ├── download_data.py
@@ -232,13 +242,12 @@ GDP_volatility = Rolling standard deviation of GDP growth (5-year window)
 
 ## Technologies Used
 
-- **Data Collection**: wbgapi, requests
+- **Data Collection**: wbgapi
 - **Data Processing**: pandas, numpy, scipy
 - **Machine Learning**: scikit-learn (Ridge, Gradient Boosting, K-Means, PCA)
 - **Time Series**: statsmodels (ARIMA, ADF test)
 - **Visualization**: matplotlib, seaborn, plotly
 - **Web Application**: Streamlit
-- **Model Interpretation**: SHAP
 - **Testing**: pytest, pytest-cov
 
 ---
@@ -255,6 +264,8 @@ GitHub: [@AbrahamAdegoke](https://github.com/AbrahamAdegoke)
 
 - **Prof. Simon Scheidegger** - Course instructor
 - **Anna Smirnova** - Teaching assistant
+- **Francesco Brunamonti** - Teaching assistant
+- **Zhongshan Chen** - Teaching assistant
 - **World Bank** - Open data access
 - **Claude (Anthropic)** - AI assistance (see [AI_USAGE.md](AI_USAGE.md))
 
