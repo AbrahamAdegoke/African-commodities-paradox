@@ -549,7 +549,7 @@ pip install -r requirements.txt
 python main.py
 
 # Run tests
-pytest tests/ --cov=src --cov-report=term-missing
+python -m pytest tests/ --cov=src --cov-report=term-missing
 
 # Launch dashboard
 streamlit run app.py
