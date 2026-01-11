@@ -19,13 +19,35 @@ import sys
 import os
 import warnings
 import multiprocessing
+import atexit
 
-# Fix for Python 3.13 multiprocessing warning
+# =============================================================================
+# FIX FOR PYTHON 3.13 MULTIPROCESSING WARNING
+# =============================================================================
 if sys.version_info >= (3, 13):
+    # Suppress the ResourceTracker warnings
+    os.environ['PYTHONWARNINGS'] = 'ignore::ResourceWarning'
+    
+    # Force fork method to avoid spawn issues
     try:
         multiprocessing.set_start_method('fork', force=True)
     except RuntimeError:
         pass
+    
+    # Clean up resource tracker at exit
+    def cleanup_resource_tracker():
+        try:
+            from multiprocessing import resource_tracker
+            resource_tracker._resource_tracker._stop = lambda *args, **kwargs: None
+        except:
+            pass
+    
+    atexit.register(cleanup_resource_tracker)
+
+# Suppress all warnings for cleaner output
+warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=ResourceWarning)
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -34,9 +56,6 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-
-# Suppress warnings for cleaner output
-warnings.filterwarnings('ignore')
 
 
 def print_header(title):
@@ -142,9 +161,9 @@ def main():
     print(f"  RMSE: {ridge_rmse:.3f}")
     print(f"  MAE: {ridge_mae:.3f}")
     
-    # Gradient Boosting
+    # Gradient Boosting (with n_jobs=1 to avoid multiprocessing issues)
     print_section("Model 2: Gradient Boosting")
-    gb = GradientBoostingModel()
+    gb = GradientBoostingModel(n_jobs=1)  # Single thread to avoid warnings
     gb.fit(X_train, y_train)
     gb_pred = gb.predict(X_test)
     gb_r2 = r2_score(y_test, gb_pred)
