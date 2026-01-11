@@ -2,7 +2,7 @@
 
 **Student:** ADEGOKE Adekounle Abraham  
 **Category:** Data Analysis & Visualization  
-**Course:** Advanced Programming (Fall 2025) - HEC Lausanne
+**Course:** Data Science and Advanced Programming (Fall 2025) - HEC Lausanne
 
 ---
 
