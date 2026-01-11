@@ -8,7 +8,7 @@ Research Question:
     What factors moderate the "resource curse" effect?
 
 Author: Abraham Adegoke
-Course: Advanced Programming - Fall 2025
+Course: Data Science and Advanced Programming - Fall 2025
 Institution: HEC Lausanne
 
 Usage:
