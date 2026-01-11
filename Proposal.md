@@ -8,9 +8,9 @@
 
 ## Problem Statement and Motivation
 
-Many African economies rely heavily on the export of primary commodities such as oil, minerals, and agricultural products. While this dependence provides substantial foreign exchange revenues, it also exposes these economies to global price shocks, terms-of-trade fluctuations, and external crises. The result is often unstable and unpredictable economic performance—a phenomenon widely known as the **African Commodities Paradox**, where resource abundance coexists with weak and volatile growth.
+Many African economies rely heavily on the export of primary commodities such as oil, minerals, and agricultural products. While this dependence provides substantial foreign exchange revenues, it also exposes these economies to global price shocks, terms of trade fluctuations, and external crises. The result is often unstable and unpredictable economic performance a phenomenon widely known as the **African Commodities Paradox**, where resource abundance coexists with weak and volatile growth.
 
-This project develops a data-driven analytical framework to examine and quantify the African commodities paradox. Using machine learning techniques, it aims to predict the volatility of GDP growth as a function of commodity dependence and key macroeconomic indicators (inflation, exchange-rate volatility, trade openness, governance, and investment). By linking structural economic features to growth instability, the ultimate objective is to identify which structural factors amplify instability and which help countries maintain more resilient growth paths.
+This project develops a data driven analytical framework to examine and quantify the African commodities paradox. Using machine learning techniques, it aims to predict the volatility of GDP growth as a function of commodity dependence and key macroeconomic indicators (inflation, exchange-rate volatility, trade openness, governance, and investment). By linking structural economic features to growth instability, the ultimate objective is to identify which structural factors amplify instability and which help countries maintain more resilient growth paths.
 
 ---
 
@@ -64,7 +64,7 @@ Two supervised regression models will be implemented to capture both linear and 
 
 ### 2. Machine Learning Model — Gradient Boosting Regressor (GBR)
 
-- Captures complex non-linear interactions, such as how the impact of CDI might depend on inflation or governance quality
+- Captures complex non linear interactions, such as how the impact of CDI might depend on inflation or governance quality
 - Typically yields higher predictive accuracy and can model threshold effects (e.g., volatility spikes once CDI > 70%)
 - Produces feature importance metrics that help identify the most influential predictors of instability
 
@@ -92,7 +92,7 @@ Feature importance (Permutation or SHAP values) will be used to interpret variab
 
 ## Expected Challenges
 
-- **Missing data:** Will use interpolation or country-year filtering
+- **Missing data:** Will use interpolation or country year filtering
 - **Heterogeneity:** Will apply normalization and lagging
 - **Data quality:** Will validate against multiple sources
 
@@ -100,7 +100,7 @@ Feature importance (Permutation or SHAP values) will be used to interpret variab
 
 ## Success Criteria
 
-1. ✅ End-to-end pipeline runs reproducibly from raw data to results
+1. ✅ End to end pipeline runs reproducibly from raw data to results
 2. ✅ Models achieve meaningful out-of-sample accuracy (e.g., R² ≥ 0.6 on test)
 3. ✅ CDI emerges as an important predictor of volatility (positive and robust)
 
