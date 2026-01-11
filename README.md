@@ -2,7 +2,7 @@
 
 **Analyzing the relationship between commodity dependence and economic volatility across 52 African countries (1990-2023)**
 
-A machine learning project investigating why resource-rich African economies often experience higher GDP growth volatility—the "African Commodities Paradox."
+A machine learning project investigating why resource rich African economies often experience higher GDP growth volatility the "African Commodities Paradox."
 
 **Author:** Abraham Adegoke  
 **Institution:** HEC Lausanne  
@@ -110,7 +110,7 @@ streamlit run app.py
 ```
 
 Features:
-- Country-by-country analysis
+- Country by country analysis
 - GDP volatility predictions
 - Cluster visualization
 - Time series analysis and forecasting
@@ -190,7 +190,7 @@ CDI = Fuel Exports (%) + Metals Exports (%) + Agri Exports (%) + Food Exports (%
 
 - Each component is already expressed as % of total exports (World Bank data)
 - Smoothed with 3-year moving average to reduce noise
-- Example: Nigeria CDI = 97% (91.6% fuel + 1.2% metals + 0.4% agri + 3.8% food)
+- Example: Nigeria CDI = 97% (91.6% fuel + 1.2% metals + 4.2% agri
 
 ### 2. GDP Volatility (Target Variable)
 
