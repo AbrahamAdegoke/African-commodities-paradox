@@ -185,7 +185,7 @@ african-commodities-paradox/
 ### 1. Commodity Dependence Index (CDI)
 
 ```
-CDI = Fuel Exports (%) + Metals Exports (%) + Agri Exports (%) + Food Exports (%)
+CDI = Fuel Exports (%) + Metals Exports (%) + Agri Exports (%)
 ```
 
 - Each component is already expressed as % of total exports (World Bank data)
