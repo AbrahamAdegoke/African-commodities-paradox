@@ -18,6 +18,14 @@ Usage:
 import sys
 import os
 import warnings
+import multiprocessing
+
+# Fix for Python 3.13 multiprocessing warning
+if sys.version_info >= (3, 13):
+    try:
+        multiprocessing.set_start_method('fork', force=True)
+    except RuntimeError:
+        pass
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
